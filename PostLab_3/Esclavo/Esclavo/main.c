@@ -1,3 +1,6 @@
+/*Rodrigo García - 23387
+  Monserrat Samayoa - 23431*/
+
 #define F_CPU 16000000  // Define la frecuencia del sistema (16 MHz) para funciones de retardo
 
 #include <avr/io.h>         // Librería base para operaciones con registros de E/S

@@ -1,10 +1,13 @@
-#define F_CPU 16000000UL  // Define la frecuencia del reloj del sistema (16 MHz) para funciones de retardo
+/* Rodrigo García - 23387
+   Monserrat Samayoa - 23431*/
 
-#include <avr/io.h>         // Librería de E/S para trabajar con registros y periféricos del AVR
-#include <util/delay.h>     // Librería para utilizar _delay_ms() y otros retardos
-#include "SPI.h"            // Archivo de cabecera personalizado para el manejo de SPI
-#include "UART.h"           // Archivo de cabecera personalizado para manejo de UART (funciones de escritura y lectura)
-#include "UART2.h"          // Posible segunda interfaz UART (o funciones auxiliares UART)
+#define F_CPU 16000000UL  
+
+#include <avr/io.h>         
+#include <util/delay.h>     
+#include "SPI.h"            
+#include "UART.h"          
+#include "UART2.h"         
 
 uint8_t valor_spi = 0;      // Variable que almacena el valor recibido por SPI
 float volt1 = 0;            // Voltaje leído del canal 1 (potenciómetro 1)
@@ -24,20 +27,16 @@ int main(void)
 	// Configura pines PB0, PB1 y PB2 como salidas (por ejemplo, SPI y control LED)
 	DDRB |= (1<<0)|(1<<1)|(1<<2); // PB2 se usa como CS para SPI
 
-	// Inicializa todos los pines de los puertos D y B en bajo
 	PORTD = 0;
 	PORTB = 0;
 
-	// Inicializa la interfaz SPI como maestro, con divisor de reloj por 16, MSB primero, reloj en reposo alto y toma datos en flanco de subida
 	SPI_init(SPI_MASTER_OSC_DIV16, SPI_DATA_ORDER_MSB, SPI_CLOCK_IDLE_HIGH, SPI_CLOCK_FIRST_EDGE);
 
-	// Inicializa UART con UBRR=103 (baudrate = 9600 si F_CPU=16MHz)
 	USART_Init(103);
 
-	// Apaga todos los LEDs al inicio
 	LEDS_PORT(0);
 
-	char opcion; // Variable para almacenar la opción del menú
+	char opcion; 
 
 	while (1)
 	{
@@ -58,25 +57,24 @@ int main(void)
 			UART_Write("\r\nPresiona 'x' para salir de las lecturas.\r\n");
 
 			while (1) {
-				// Verifica si hay una tecla presionada (lectura no bloqueante)
 				if (UCSR0A & (1 << RXC0)) {
-					char salida = UDR0; // Lee el carácter recibido directamente
-					if (salida == 'x') break; // Sal del bucle si el usuario presiona 'x'
+					char salida = UDR0; 
+					if (salida == 'x') break; 
 				}
 
-				// Lectura del voltaje del canal 1 (potenciómetro 1)
+				// Lectura del voltaje del canal 1 (pot 1)
 				PORTB &= ~(1<<2);       // Baja CS (selecciona esclavo SPI)
-				SPI_Write('a');         // Envía comando 'a' al esclavo
-				valor_spi = SPI_Read(); // Lee la respuesta
-				volt1 = 5.0 * valor_spi / 255.0; // Convierte a voltaje
-				PORTB |= (1<<2);        // Sube CS
+				SPI_Write('a');         
+				valor_spi = SPI_Read(); 
+				volt1 = 5.0 * valor_spi / 255.0; 
+				PORTB |= (1<<2);       
 
-				// Lectura del voltaje del canal 2 (potenciómetro 2)
-				PORTB &= ~(1<<2);       // Baja CS
-				SPI_Write('b');         // Envía comando 'b'
-				valor_spi = SPI_Read(); // Lee respuesta
-				volt2 = 5.0 * valor_spi / 255.0; // Convierte a voltaje
-				PORTB |= (1<<2);        // Sube CS
+				// Lectura del voltaje del canal 2 (pot 2)
+				PORTB &= ~(1<<2);       
+				SPI_Write('b');         
+				valor_spi = SPI_Read(); 
+				volt2 = 5.0 * valor_spi / 255.0; 
+				PORTB |= (1<<2);        
 
 				// Mostrar los voltajes en UART
 				UART_Char('\n');
@@ -88,7 +86,7 @@ int main(void)
 				UART_Var(volt2);
 				UART_Write(" V\r\n");
 
-				_delay_ms(500); // Pequeña pausa entre lecturas
+				_delay_ms(500);
 			}
 		}
 
@@ -96,9 +94,8 @@ int main(void)
 		else if (opcion == '2') {
 			_delay_ms(1000); // Pausa para evitar conflictos de lectura
 
-			// Limpia el buffer UART por si hay datos basura
 			while (UCSR0A & (1 << RXC0)) {
-				char temp10 = UDR0; // Descarta cualquier carácter recibido previamente
+				char temp10 = UDR0; 
 			}
 
 			UART_Write("\r\nIngresa un numero (0-255): ");
@@ -113,10 +110,10 @@ int main(void)
 			LEDS_PORT(numero);
 
 			// Envía el número por SPI
-			PORTB &= ~(1<<2);        // Baja CS
-			SPI_Write(numero);       // Envía número
-			valor_spi = SPI_Read();  // Lee respuesta (aunque no se usa aquí)
-			PORTB |= (1<<2);         // Sube CS
+			PORTB &= ~(1<<2);       
+			SPI_Write(numero);       
+			valor_spi = SPI_Read();  
+			PORTB |= (1<<2);         
 		}
 
 		// Manejo de opción inválida
@@ -128,13 +125,13 @@ int main(void)
 
 // Función para controlar el encendido/apagado de LEDs según una máscara de bits
 void LEDS_PORT(uint8_t mascara) {
-	for(int i = 0; i < 8; i++) {  // Itera sobre los 8 bits
-		if (mascara & (1 << i)) { // Si el bit está en 1, enciende el LED correspondiente
-			uint8_t pin = pines[i]; // Mapea el índice al número de pin real
+	for(int i = 0; i < 8; i++) {  
+		if (mascara & (1 << i)) { 
+			uint8_t pin = pines[i]; 
 			if (pin >= 8 && pin <= 13) {
-				PORTB |= (1 << (pin - 8)); // Enciende LED conectado a PORTB
+				PORTB |= (1 << (pin - 8)); 
 				} else if (pin <= 7) {
-				PORTD |= (1 << pin); // Enciende LED conectado a PORTD
+				PORTD |= (1 << pin); 
 			}
 			} else { // Si el bit está en 0, apaga el LED correspondiente
 			uint8_t pin = pines[i];
@@ -146,5 +143,3 @@ void LEDS_PORT(uint8_t mascara) {
 		}
 	}
 }
-
-
